@@ -15,6 +15,21 @@ namespace Game2048
 			this.column = column;
 			this.row = row;
 		}
+
+		public static bool operator ==(MatrixCell lhs, MatrixCell rhs)
+		{
+			return lhs.column == rhs.column && lhs.row == rhs.row;
+		}
+
+		public static bool operator !=(MatrixCell lhs, MatrixCell rhs)
+		{
+			return lhs.column != rhs.column || lhs.row != rhs.row;
+		}
+	}
+
+	public enum Direction
+	{
+		NONE, UP, RIGHT, DOWN, LEFT
 	}
 
 	public class Field : MonoBehaviour
@@ -24,6 +39,8 @@ namespace Game2048
 		private static Transform _fieldObjectTransform;
 		private static Matrix4x4 _field;
 		private static int _freeCellCount;
+		private static List<MatrixCell> _cubesCoordinates;
+		private static List<GameObject> _cubes = new List<GameObject>();
 
 		void Start()
 		{
@@ -36,8 +53,9 @@ namespace Game2048
 		public static void Reset()
 		{
 			Clear();
-			List<MatrixCell> initialCubeCoordinates = GetRandomCubeCoordinates();
-			DrawCubes(initialCubeCoordinates);
+			_cubesCoordinates = GetRandomCubeCoordinates();
+			_cubes.Clear();
+			DrawCubes(_cubesCoordinates);
 		}
 
 		private static void Clear()
@@ -68,50 +86,184 @@ namespace Game2048
 					randomRow = random.Next(0, 4);
 					randomColumn = random.Next(0, 4);
 				}
-				result.Add(new MatrixCell(randomRow, randomColumn));
+				result.Add(new MatrixCell(randomColumn, randomRow));
 				--_freeCellCount;
 				if (_freeCellCount == 0)
 				{
 					break;
 				}
+				_field[randomRow, randomColumn] = Constant.FIELD.INITIAL_CUBE_VALUE;
 			}
 			return result;
 		}
 
-		private static void DrawCubes(List<MatrixCell> initialCubeCoordinates)
+		private static void DrawCubes(List<MatrixCell> cubesCoordinates)
 		{
-			for (int i = 0; i < initialCubeCoordinates.Count; ++i)
+			for (int i = 0; i < cubesCoordinates.Count; ++i)
 			{
-				_field[initialCubeCoordinates[i].row, initialCubeCoordinates[i].column] = Constant.FIELD.INITIAL_CUBE_VALUE;
-				Transform cubeObjectTransform = Instantiate(_cube, Vector3.zero, Quaternion.identity);
-				cubeObjectTransform.gameObject.GetComponentInChildren<Text>().text = Constant.FIELD.INITIAL_CUBE_VALUE.ToString();
-				cubeObjectTransform.SetParent(_fieldObjectTransform);
-				Debug.Log(initialCubeCoordinates[i].column + " " + initialCubeCoordinates[i].row);
-				cubeObjectTransform.gameObject.GetComponent<RectTransform>().anchoredPosition = 
-					new Vector3(
-						initialCubeCoordinates[i].column * (Constant.FIELD.CELL_SIZE + Constant.FIELD.GRID_WIDTH) + Constant.FIELD.OFFSET.LEFT,
-						-(initialCubeCoordinates[i].row * (Constant.FIELD.CELL_SIZE + Constant.FIELD.GRID_WIDTH) + Constant.FIELD.OFFSET.TOP),
-						0
-					);
+				DrawCube(cubesCoordinates[i]);
 			}
 		}
+
+		private static void DrawCube(MatrixCell cubeCoordinates)
+		{
+			Transform cubeObjectTransform = Instantiate(_cube, Vector3.zero, Quaternion.identity);
+			_cubes.Add(cubeObjectTransform.gameObject);
+			cubeObjectTransform.gameObject.GetComponentInChildren<Text>().text = Constant.FIELD.INITIAL_CUBE_VALUE.ToString();
+			cubeObjectTransform.SetParent(_fieldObjectTransform);
+			cubeObjectTransform.gameObject.GetComponent<RectTransform>().anchoredPosition =
+				new Vector3(
+					cubeCoordinates.column * (Constant.FIELD.CELL_SIZE + Constant.FIELD.GRID_WIDTH) + Constant.FIELD.OFFSET.LEFT,
+					-(cubeCoordinates.row * (Constant.FIELD.CELL_SIZE + Constant.FIELD.GRID_WIDTH) + Constant.FIELD.OFFSET.TOP),
+					0
+				);
+		}
+
 		void OnGUI()
 		{
+			Direction direction = Direction.NONE;
 			if (Event.current.Equals(Event.KeyboardEvent(Constant.KEYBINDING.UP)))
 			{
-				Debug.Log("UP");
+				direction = Direction.UP;
 			}
 			else if (Event.current.Equals(Event.KeyboardEvent(Constant.KEYBINDING.RIGHT)))
 			{
-				Debug.Log("RIGHT");
+				direction = Direction.RIGHT;
 			}
 			else if (Event.current.Equals(Event.KeyboardEvent(Constant.KEYBINDING.DOWN)))
 			{
-				Debug.Log("DOWN");
+				direction = Direction.DOWN;
 			}
 			else if (Event.current.Equals(Event.KeyboardEvent(Constant.KEYBINDING.LEFT)))
 			{
-				Debug.Log("LEFT");
+				direction = Direction.LEFT;
+			}
+			if (direction != Direction.NONE)
+			{
+				MakeStep(direction);
+			}
+		}
+
+		private static void MakeStep(Direction direction)
+		{
+			int startColumn = 0;
+			int startRow = 0;
+			int columnDirection = 1;
+			int rowDirection = 1;
+			bool doesProcessColumnFirst = true;
+
+			if (direction == Direction.RIGHT)
+			{
+				startColumn = 3;
+				startRow = 0;
+				columnDirection = -1;
+				rowDirection = 1;
+				doesProcessColumnFirst = false;
+			}
+			else if (direction == Direction.DOWN)
+			{
+				startColumn = 0;
+				startRow = 3;
+				columnDirection = 1;
+				rowDirection = -1;
+			}
+			else if (direction == Direction.LEFT)
+			{
+				startColumn = 0;
+				startRow = 0;
+				columnDirection = 1;
+				rowDirection = 1;
+				doesProcessColumnFirst = false;
+			}
+
+			if (doesProcessColumnFirst)
+			{
+				for (int row = startRow; row < 4 && row > -1; row += rowDirection)
+				{
+					for (int column = startColumn; column < 4 && column > -1; column += columnDirection)
+					{
+						if (_field[row, column] != 0)
+						{
+							VerticalPush(new MatrixCell(column, row), -rowDirection);
+						}
+					}
+				}
+			}
+			else
+			{
+				for (int column = startColumn; column < 4 && column > -1; column += columnDirection)
+				{
+					for (int row = startRow; row < 4 && row > -1; row += rowDirection)
+					{
+						if (_field[row, column] != 0)
+						{
+							HorizontalPush(new MatrixCell(column, row), -columnDirection);
+						}
+					}
+				}
+			}
+		}
+
+		private static void VerticalPush(MatrixCell matrixCell, int rowDirection)
+		{
+			int row = matrixCell.row;
+			if (row + rowDirection < 4 && row + rowDirection > -1)
+			{
+				row += rowDirection;
+				for (; row < 4 && row > -1; row += rowDirection)
+				{
+					if (_field[row, matrixCell.column] != 0)
+					{
+						break;
+					}
+				}
+				row -= rowDirection;
+			}
+			if (row == matrixCell.row)
+			{
+				return;
+			}
+			_field[row, matrixCell.column] = _field[matrixCell.row, matrixCell.column];
+			_field[matrixCell.row, matrixCell.column] = 0;
+			_cubesCoordinates.Add(new MatrixCell(matrixCell.column, row));
+			DrawCube(_cubesCoordinates[_cubesCoordinates.Count - 1]);
+			DestroyCube(matrixCell);
+		}
+
+		private static void HorizontalPush(MatrixCell matrixCell, int columnDirection)
+		{
+			int column = matrixCell.column;
+			if (column + columnDirection < 4 && column + columnDirection > -1)
+			{
+				column += columnDirection;
+				for (; column < 4 && column > -1; column += columnDirection)
+				{
+					if (_field[matrixCell.row, column] != 0)
+					{
+						break;
+					}
+				}
+				column -= columnDirection;
+			}
+			if (column == matrixCell.column)
+			{
+				return;
+			}
+			_field[matrixCell.row, column] = _field[matrixCell.row, matrixCell.column];
+			_field[matrixCell.row, matrixCell.column] = 0;
+			_cubesCoordinates.Add(new MatrixCell(column, matrixCell.row));
+			DrawCube(_cubesCoordinates[_cubesCoordinates.Count - 1]);
+			DestroyCube(matrixCell);
+		}
+
+		private static void DestroyCube(MatrixCell matrixCell)
+		{
+			for (int i = 0; i < _cubesCoordinates.Count; ++i)
+			{
+				if (_cubesCoordinates[i] == matrixCell)
+				{
+					Destroy(_cubes[i]);
+				}
 			}
 		}
 	}
