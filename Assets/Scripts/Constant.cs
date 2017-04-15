@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections.Generic;
 
 namespace Game2048
 {
@@ -14,6 +15,7 @@ namespace Game2048
 		{
 			public static int INITIAL_CUBE_COUNT = 2;
 			public static int INITIAL_CUBE_VALUE = 2;
+			public static int NEXT_STEP_CUBE_COUNT = 1;
 			public static class OFFSET
 			{
 				public static int LEFT = 5;
@@ -21,6 +23,11 @@ namespace Game2048
 			}
 			public static int GRID_WIDTH = 4;
 			public static int CELL_SIZE = 88;
+
+			public static class CUBE
+			{
+				public static int COLOR_CHANGE = 20;
+			}
 		}
 		public static class KEYBINDING
 		{

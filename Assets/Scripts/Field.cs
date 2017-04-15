@@ -46,16 +46,16 @@ namespace Game2048
 		{
 			_fieldObjectTransform = gameObject.transform;
 			_cube = cube;
-			_freeCellCount = 4 * 4;
 			Reset();
 		}
 
 		public static void Reset()
 		{
 			Clear();
-			_cubesCoordinates = GetRandomCubeCoordinates();
+			_freeCellCount = 4 * 4;
+			_cubesCoordinates = GetRandomCubeCoordinates(Constant.FIELD.INITIAL_CUBE_COUNT);
 			_cubes.Clear();
-			DrawCubes(_cubesCoordinates);
+			DrawCubes(_cubesCoordinates, Constant.FIELD.INITIAL_CUBE_VALUE);
 		}
 
 		private static void Clear()
@@ -73,11 +73,15 @@ namespace Game2048
 			}
 		}
 
-		private static List<MatrixCell> GetRandomCubeCoordinates()
+		private static List<MatrixCell> GetRandomCubeCoordinates(int cubeCount)
 		{
 			List<MatrixCell> result = new List<MatrixCell>();
+			if (_freeCellCount == 0)
+			{
+				return result;
+			}
 			System.Random random = new System.Random();
-			for (int i = 0; i < Constant.FIELD.INITIAL_CUBE_COUNT; ++i)
+			for (int i = 0; i < cubeCount; ++i)
 			{
 				int randomRow = -1;
 				int randomColumn = -1;
@@ -87,29 +91,29 @@ namespace Game2048
 					randomColumn = random.Next(0, 4);
 				}
 				result.Add(new MatrixCell(randomColumn, randomRow));
+				_field[randomRow, randomColumn] = Constant.FIELD.INITIAL_CUBE_VALUE;
 				--_freeCellCount;
 				if (_freeCellCount == 0)
 				{
 					break;
 				}
-				_field[randomRow, randomColumn] = Constant.FIELD.INITIAL_CUBE_VALUE;
 			}
 			return result;
 		}
 
-		private static void DrawCubes(List<MatrixCell> cubesCoordinates)
+		private static void DrawCubes(List<MatrixCell> cubesCoordinates, int value)
 		{
 			for (int i = 0; i < cubesCoordinates.Count; ++i)
 			{
-				DrawCube(cubesCoordinates[i]);
+				DrawCube(cubesCoordinates[i], value);
 			}
 		}
 
-		private static void DrawCube(MatrixCell cubeCoordinates)
+		private static void DrawCube(MatrixCell cubeCoordinates, int value)
 		{
 			Transform cubeObjectTransform = Instantiate(_cube, Vector3.zero, Quaternion.identity);
 			_cubes.Add(cubeObjectTransform.gameObject);
-			cubeObjectTransform.gameObject.GetComponentInChildren<Text>().text = Constant.FIELD.INITIAL_CUBE_VALUE.ToString();
+			cubeObjectTransform.gameObject.GetComponentInChildren<Text>().text = value.ToString();
 			cubeObjectTransform.SetParent(_fieldObjectTransform);
 			cubeObjectTransform.gameObject.GetComponent<RectTransform>().anchoredPosition =
 				new Vector3(
@@ -117,6 +121,13 @@ namespace Game2048
 					-(cubeCoordinates.row * (Constant.FIELD.CELL_SIZE + Constant.FIELD.GRID_WIDTH) + Constant.FIELD.OFFSET.TOP),
 					0
 				);
+			Color newColor = cubeObjectTransform.gameObject.GetComponent<Image>().color;
+			float newColorValue = (float)(Math.Log(value, 2) - 1) * Constant.FIELD.CUBE.COLOR_CHANGE;
+			Debug.Log(newColorValue);
+			newColor.r -= newColorValue / 255;
+			newColor.b -= newColorValue / 255;
+			cubeObjectTransform.gameObject.GetComponent<Image>().color = newColor;
+			Debug.Log(newColor);
 		}
 
 		void OnGUI()
@@ -176,6 +187,7 @@ namespace Game2048
 				doesProcessColumnFirst = false;
 			}
 
+			bool doesStepSucceded = false;
 			if (doesProcessColumnFirst)
 			{
 				for (int row = startRow; row < 4 && row > -1; row += rowDirection)
@@ -184,7 +196,7 @@ namespace Game2048
 					{
 						if (_field[row, column] != 0)
 						{
-							VerticalPush(new MatrixCell(column, row), -rowDirection);
+							doesStepSucceded = VerticalPush(new MatrixCell(column, row), -rowDirection) || (doesStepSucceded);
 						}
 					}
 				}
@@ -197,14 +209,20 @@ namespace Game2048
 					{
 						if (_field[row, column] != 0)
 						{
-							HorizontalPush(new MatrixCell(column, row), -columnDirection);
+							doesStepSucceded = HorizontalPush(new MatrixCell(column, row), -columnDirection) || (doesStepSucceded);
 						}
 					}
 				}
 			}
+			if (doesStepSucceded)
+			{
+				List<MatrixCell> newCubes = GetRandomCubeCoordinates(Constant.FIELD.NEXT_STEP_CUBE_COUNT);
+				_cubesCoordinates.AddRange(newCubes);
+				DrawCubes(newCubes, Constant.FIELD.INITIAL_CUBE_VALUE);
+			}
 		}
 
-		private static void VerticalPush(MatrixCell matrixCell, int rowDirection)
+		private static bool VerticalPush(MatrixCell matrixCell, int rowDirection)
 		{
 			int row = matrixCell.row;
 			if (row + rowDirection < 4 && row + rowDirection > -1)
@@ -214,23 +232,40 @@ namespace Game2048
 				{
 					if (_field[row, matrixCell.column] != 0)
 					{
-						break;
+						if (_field[row, matrixCell.column] != _field[matrixCell.row, matrixCell.column])
+						{
+							row -= rowDirection;
+							break;
+						}
+						DestroyCube(new MatrixCell(matrixCell.column, row));
+						_field[row, matrixCell.column] *= 2;
+						ScorePanel.IncreaseScore((int)_field[row, matrixCell.column]);
+						_field[matrixCell.row, matrixCell.column] = 0;
+						DestroyCube(matrixCell);
+						_cubesCoordinates.Add(new MatrixCell(matrixCell.column, row));
+						DrawCube(_cubesCoordinates[_cubesCoordinates.Count - 1], (int)_field[row, matrixCell.column]);
+						++_freeCellCount;
+						return true;
 					}
 				}
+			}
+			if (row == 4 || row == -1)
+			{
 				row -= rowDirection;
 			}
 			if (row == matrixCell.row)
 			{
-				return;
+				return false;
 			}
 			_field[row, matrixCell.column] = _field[matrixCell.row, matrixCell.column];
 			_field[matrixCell.row, matrixCell.column] = 0;
-			_cubesCoordinates.Add(new MatrixCell(matrixCell.column, row));
-			DrawCube(_cubesCoordinates[_cubesCoordinates.Count - 1]);
 			DestroyCube(matrixCell);
+			_cubesCoordinates.Add(new MatrixCell(matrixCell.column, row));
+			DrawCube(_cubesCoordinates[_cubesCoordinates.Count - 1], (int)_field[row, matrixCell.column]);
+			return true;
 		}
 
-		private static void HorizontalPush(MatrixCell matrixCell, int columnDirection)
+		private static bool HorizontalPush(MatrixCell matrixCell, int columnDirection)
 		{
 			int column = matrixCell.column;
 			if (column + columnDirection < 4 && column + columnDirection > -1)
@@ -240,20 +275,37 @@ namespace Game2048
 				{
 					if (_field[matrixCell.row, column] != 0)
 					{
-						break;
+						if (_field[matrixCell.row, column] != _field[matrixCell.row, matrixCell.column])
+						{
+							column -= columnDirection;
+							break;
+						}
+						DestroyCube(new MatrixCell(column, matrixCell.row));
+						_field[matrixCell.row, column] *= 2;
+						ScorePanel.IncreaseScore((int)_field[matrixCell.row, column]);
+						_field[matrixCell.row, matrixCell.column] = 0;
+						DestroyCube(matrixCell);
+						_cubesCoordinates.Add(new MatrixCell(column, matrixCell.row));
+						DrawCube(_cubesCoordinates[_cubesCoordinates.Count - 1], (int)_field[matrixCell.row, column]);
+						++_freeCellCount;
+						return true;
 					}
 				}
+			}
+			if (column == 4 || column == -1)
+			{
 				column -= columnDirection;
 			}
 			if (column == matrixCell.column)
 			{
-				return;
+				return false;
 			}
 			_field[matrixCell.row, column] = _field[matrixCell.row, matrixCell.column];
 			_field[matrixCell.row, matrixCell.column] = 0;
-			_cubesCoordinates.Add(new MatrixCell(column, matrixCell.row));
-			DrawCube(_cubesCoordinates[_cubesCoordinates.Count - 1]);
 			DestroyCube(matrixCell);
+			_cubesCoordinates.Add(new MatrixCell(column, matrixCell.row));
+			DrawCube(_cubesCoordinates[_cubesCoordinates.Count - 1], (int)_field[matrixCell.row, column]);
+			return true;
 		}
 
 		private static void DestroyCube(MatrixCell matrixCell)
