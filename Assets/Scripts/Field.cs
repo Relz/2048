@@ -95,5 +95,24 @@ namespace Game2048
 					);
 			}
 		}
+		void OnGUI()
+		{
+			if (Event.current.Equals(Event.KeyboardEvent(Constant.KEYBINDING.UP)))
+			{
+				Debug.Log("UP");
+			}
+			else if (Event.current.Equals(Event.KeyboardEvent(Constant.KEYBINDING.RIGHT)))
+			{
+				Debug.Log("RIGHT");
+			}
+			else if (Event.current.Equals(Event.KeyboardEvent(Constant.KEYBINDING.DOWN)))
+			{
+				Debug.Log("DOWN");
+			}
+			else if (Event.current.Equals(Event.KeyboardEvent(Constant.KEYBINDING.LEFT)))
+			{
+				Debug.Log("LEFT");
+			}
+		}
 	}
 }

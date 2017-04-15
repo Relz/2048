@@ -22,5 +22,12 @@ namespace Game2048
 			public static int GRID_WIDTH = 4;
 			public static int CELL_SIZE = 88;
 		}
+		public static class KEYBINDING
+		{
+			public static string UP = "W";
+			public static string RIGHT = "D";
+			public static string DOWN = "S";
+			public static string LEFT = "A";
+		}
 	}
 }
