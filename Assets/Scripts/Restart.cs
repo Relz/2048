@@ -5,7 +5,9 @@ namespace Game2048
 {
 	public class Restart : MonoBehaviour
 	{
-		private static Text _restartButtonText;
+		public Field field;
+		public ScorePanel scorePanel;
+		private Text _restartButtonText;
 		void Start()
 		{
 			_restartButtonText = GetComponentInChildren<Text>();
@@ -13,11 +15,10 @@ namespace Game2048
 			GetComponent<Button>().onClick.AddListener(RestartGame);
 		}
 
-		private static void RestartGame()
+		private void RestartGame()
 		{
-			Field.Reset();
-			ScorePanel.Reset();
-			Audio.Reset();
+			field.Reset();
+			scorePanel.Reset();
 		}
 	}
 }

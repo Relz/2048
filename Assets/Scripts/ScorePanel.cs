@@ -7,9 +7,9 @@ namespace Game2048
 	{
 		public GameObject scoreLabel;
 		public GameObject scoreValue;
-		private static Text _scoreLabelText;
-		private static Text _scoreValueText;
-		private static int _score;
+		private Text _scoreLabelText;
+		private Text _scoreValueText;
+		private int _score;
 
 		void Start()
 		{
@@ -19,13 +19,13 @@ namespace Game2048
 			Reset();
 		}
 
-		public static void Reset()
+		public void Reset()
 		{
 			_score = Constant.SCORE_PANEL.INITIAL_VALUE;
 			_scoreValueText.text = _score.ToString();
 		}
 
-		public static void IncreaseScore(int value)
+		public void IncreaseScore(int value)
 		{
 			_score += value;
 			_scoreValueText.text = _score.ToString();

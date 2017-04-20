@@ -3,38 +3,38 @@ using System.Collections.Generic;
 
 namespace Game2048
 {
-	public static class Constant
+	public class Constant
 	{
-		public static string RESTART_BUTTON_LABEL = "Restart";
-		public static class SCORE_PANEL
+		public readonly static string RESTART_BUTTON_LABEL = "Restart";
+		public class SCORE_PANEL
 		{
-			public static string LABEL = "Score:";
-			public static int INITIAL_VALUE = 0;
+			public readonly static string LABEL = "Score:";
+			public readonly static int INITIAL_VALUE = 0;
 		}
-		public static class FIELD
+		public class FIELD
 		{
-			public static int INITIAL_CUBE_COUNT = 2;
-			public static int INITIAL_CUBE_VALUE = 2;
-			public static int NEXT_STEP_CUBE_COUNT = 1;
+			public readonly static int INITIAL_CUBE_COUNT = 2;
+			public readonly static int INITIAL_CUBE_VALUE = 2;
+			public readonly static int NEXT_STEP_CUBE_COUNT = 1;
 			public static class OFFSET
 			{
-				public static int LEFT = 5;
-				public static int TOP = 5;
+				public readonly static int LEFT = 5;
+				public readonly static int TOP = 5;
 			}
-			public static int GRID_WIDTH = 4;
-			public static int CELL_SIZE = 88;
+			public readonly static int GRID_WIDTH = 4;
+			public readonly static int CELL_SIZE = 88;
 
-			public static class CUBE
+			public class CUBE
 			{
-				public static int COLOR_CHANGE = 20;
+				public readonly static int COLOR_CHANGE = 20;
 			}
 		}
-		public static class KEYBINDING
+		public class KEYBINDING
 		{
-			public static string UP = "W";
-			public static string RIGHT = "D";
-			public static string DOWN = "S";
-			public static string LEFT = "A";
+			public readonly static string UP = "W";
+			public readonly static string RIGHT = "D";
+			public readonly static string DOWN = "S";
+			public readonly static string LEFT = "A";
 		}
 	}
 }

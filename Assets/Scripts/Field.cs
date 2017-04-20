@@ -35,12 +35,13 @@ namespace Game2048
 	public class Field : MonoBehaviour
 	{
 		public Transform cube;
-		private static Transform _cube;
-		private static Transform _fieldObjectTransform;
-		private static Matrix4x4 _field;
-		private static int _freeCellCount;
-		private static List<MatrixCell> _cubesCoordinates;
-		private static List<GameObject> _cubes = new List<GameObject>();
+		public ScorePanel scorePanel;
+		private Transform _cube;
+		private Transform _fieldObjectTransform;
+		private Matrix4x4 _field;
+		private int _freeCellCount;
+		private List<MatrixCell> _cubesCoordinates;
+		private List<GameObject> _cubes = new List<GameObject>();
 
 		void Start()
 		{
@@ -49,7 +50,7 @@ namespace Game2048
 			Reset();
 		}
 
-		public static void Reset()
+		public void Reset()
 		{
 			Clear();
 			_freeCellCount = 4 * 4;
@@ -58,7 +59,7 @@ namespace Game2048
 			DrawCubes(_cubesCoordinates, Constant.FIELD.INITIAL_CUBE_VALUE);
 		}
 
-		private static void Clear()
+		private void Clear()
 		{
 			for (int col = 0; col < 4; ++col)
 			{
@@ -73,7 +74,7 @@ namespace Game2048
 			}
 		}
 
-		private static List<MatrixCell> GetRandomCubeCoordinates(int cubeCount)
+		private List<MatrixCell> GetRandomCubeCoordinates(int cubeCount)
 		{
 			List<MatrixCell> result = new List<MatrixCell>();
 			if (_freeCellCount == 0)
@@ -101,7 +102,7 @@ namespace Game2048
 			return result;
 		}
 
-		private static void DrawCubes(List<MatrixCell> cubesCoordinates, int value)
+		private void DrawCubes(List<MatrixCell> cubesCoordinates, int value)
 		{
 			for (int i = 0; i < cubesCoordinates.Count; ++i)
 			{
@@ -109,7 +110,7 @@ namespace Game2048
 			}
 		}
 
-		private static void DrawCube(MatrixCell cubeCoordinates, int value)
+		private void DrawCube(MatrixCell cubeCoordinates, int value)
 		{
 			Transform cubeObjectTransform = Instantiate(_cube, Vector3.zero, Quaternion.identity);
 			_cubes.Add(cubeObjectTransform.gameObject);
@@ -123,11 +124,9 @@ namespace Game2048
 				);
 			Color newColor = cubeObjectTransform.gameObject.GetComponent<Image>().color;
 			float newColorValue = (float)(Math.Log(value, 2) - 1) * Constant.FIELD.CUBE.COLOR_CHANGE;
-			Debug.Log(newColorValue);
 			newColor.r -= newColorValue / 255;
 			newColor.b -= newColorValue / 255;
 			cubeObjectTransform.gameObject.GetComponent<Image>().color = newColor;
-			Debug.Log(newColor);
 		}
 
 		void OnGUI()
@@ -155,7 +154,7 @@ namespace Game2048
 			}
 		}
 
-		private static void MakeStep(Direction direction)
+		private void MakeStep(Direction direction)
 		{
 			int startColumn = 0;
 			int startRow = 0;
@@ -222,7 +221,7 @@ namespace Game2048
 			}
 		}
 
-		private static bool VerticalPush(MatrixCell matrixCell, int rowDirection)
+		private bool VerticalPush(MatrixCell matrixCell, int rowDirection)
 		{
 			int row = matrixCell.row;
 			if (row + rowDirection < 4 && row + rowDirection > -1)
@@ -239,7 +238,7 @@ namespace Game2048
 						}
 						DestroyCube(new MatrixCell(matrixCell.column, row));
 						_field[row, matrixCell.column] *= 2;
-						ScorePanel.IncreaseScore((int)_field[row, matrixCell.column]);
+						scorePanel.IncreaseScore((int)_field[row, matrixCell.column]);
 						_field[matrixCell.row, matrixCell.column] = 0;
 						DestroyCube(matrixCell);
 						_cubesCoordinates.Add(new MatrixCell(matrixCell.column, row));
@@ -265,7 +264,7 @@ namespace Game2048
 			return true;
 		}
 
-		private static bool HorizontalPush(MatrixCell matrixCell, int columnDirection)
+		private bool HorizontalPush(MatrixCell matrixCell, int columnDirection)
 		{
 			int column = matrixCell.column;
 			if (column + columnDirection < 4 && column + columnDirection > -1)
@@ -282,7 +281,7 @@ namespace Game2048
 						}
 						DestroyCube(new MatrixCell(column, matrixCell.row));
 						_field[matrixCell.row, column] *= 2;
-						ScorePanel.IncreaseScore((int)_field[matrixCell.row, column]);
+						scorePanel.IncreaseScore((int)_field[matrixCell.row, column]);
 						_field[matrixCell.row, matrixCell.column] = 0;
 						DestroyCube(matrixCell);
 						_cubesCoordinates.Add(new MatrixCell(column, matrixCell.row));
@@ -308,7 +307,7 @@ namespace Game2048
 			return true;
 		}
 
-		private static void DestroyCube(MatrixCell matrixCell)
+		private void DestroyCube(MatrixCell matrixCell)
 		{
 			for (int i = 0; i < _cubesCoordinates.Count; ++i)
 			{
