@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 namespace Game2048
@@ -32,7 +33,7 @@ namespace Game2048
 		NONE, UP, RIGHT, DOWN, LEFT
 	}
 
-	public class Field : MonoBehaviour
+	public class Field : MonoBehaviour, IDragHandler, IBeginDragHandler, IEndDragHandler
 	{
 		public Transform cube;
 		public ScorePanel scorePanel;
@@ -112,14 +113,18 @@ namespace Game2048
 
 		private void DrawCube(MatrixCell cubeCoordinates, int value)
 		{
+			Vector2 fieldSize = _fieldObjectTransform.GetComponent<RectTransform>().sizeDelta;
+			Vector2 cellSize = new(fieldSize.x * 0.2241143617f, fieldSize.y * 0.2241143617f);
+			float separatorThickness = (fieldSize.x - cellSize.x * 4) / 5;
 			Transform cubeObjectTransform = Instantiate(_cube, Vector3.zero, Quaternion.identity);
+			cubeObjectTransform.GetComponent<RectTransform>().sizeDelta = cellSize;
 			_cubes.Add(cubeObjectTransform.gameObject);
 			cubeObjectTransform.gameObject.GetComponentInChildren<Text>().text = value.ToString();
 			cubeObjectTransform.SetParent(_fieldObjectTransform);
 			cubeObjectTransform.gameObject.GetComponent<RectTransform>().anchoredPosition =
 				new Vector3(
-					cubeCoordinates.column * (Constant.FIELD.CELL_SIZE + Constant.FIELD.GRID_WIDTH) + Constant.FIELD.OFFSET.LEFT,
-					-(cubeCoordinates.row * (Constant.FIELD.CELL_SIZE + Constant.FIELD.GRID_WIDTH) + Constant.FIELD.OFFSET.TOP),
+					cubeCoordinates.column * (cellSize.x + separatorThickness) + separatorThickness,
+					-(cubeCoordinates.row * (cellSize.y + separatorThickness) + separatorThickness),
 					0
 				);
 			Color newColor = cubeObjectTransform.gameObject.GetComponent<Image>().color;
@@ -127,6 +132,7 @@ namespace Game2048
 			newColor.r -= newColorValue / 255;
 			newColor.b -= newColorValue / 255;
 			cubeObjectTransform.gameObject.GetComponent<Image>().color = newColor;
+			cubeObjectTransform.GetComponent<RectTransform>().localScale = Vector3.one;
 		}
 
 		void OnGUI()
@@ -317,5 +323,41 @@ namespace Game2048
 				}
 			}
 		}
-	}
+
+        public void OnDrag(PointerEventData eventData)
+        {
+        }
+
+        public void OnBeginDrag(PointerEventData eventData)
+        {
+        }
+
+        public void OnEndDrag(PointerEventData eventData)
+        {
+			Vector2 delta = eventData.position - eventData.pressPosition;
+
+			if (Mathf.Abs(delta.x) > Mathf.Abs(delta.y))
+			{
+				if (delta.x < 0)
+				{
+					MakeStep(Direction.LEFT);
+				}
+				else
+				{
+					MakeStep(Direction.RIGHT);
+				}
+			}
+			else
+			{
+				if (delta.y < 0)
+				{
+					MakeStep(Direction.DOWN);
+				}
+				else
+				{
+					MakeStep(Direction.UP);
+				}
+			}
+        }
+    }
 }
