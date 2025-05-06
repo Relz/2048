@@ -13,9 +13,10 @@ namespace Game2048
 		}
 		public class FIELD
 		{
-			public readonly static int INITIAL_CUBE_COUNT = 2;
-			public readonly static int INITIAL_CUBE_VALUE = 2;
-			public readonly static int NEXT_STEP_CUBE_COUNT = 1;
+			public const int INITIAL_CUBE_COUNT = 2;
+			public const int INITIAL_CUBE_VALUE = 2;
+			public const int NEXT_STEP_CUBE_COUNT = 1;
+			public const float ANIMATION_DURATION = 0.1f;
 			public static class OFFSET
 			{
 				public readonly static int LEFT = 5;
